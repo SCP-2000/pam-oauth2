@@ -8,7 +8,7 @@
       let pkgs = import nixpkgs { inherit system; };
       in
       {
-        devShell = pkgs.mkShell { buildInputs = with pkgs; [ cargo clang pam ]; };
+        devShell = pkgs.mkShell { buildInputs = with pkgs; [ cargo clang pam pamtester ]; };
       }
     );
 }
