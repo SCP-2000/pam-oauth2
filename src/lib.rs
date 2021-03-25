@@ -1,6 +1,6 @@
 pub mod error;
 
-pub use crate::error::PamError;
+use crate::error::PamError;
 use pam_sys::types::*;
 use std::error::Error;
 use std::ffi::{CStr, CString};

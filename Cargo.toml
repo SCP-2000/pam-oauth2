@@ -5,9 +5,8 @@ authors = ["Nick Cao <nickcao@nichi.co>"]
 edition = "2018"
 
 [lib]
-crate_type = ["dylib"]
-
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+crate_type = ["cdylib"]
 
 [dependencies]
 pam-sys = "0.5.6"
+yup-oauth2 = "5.1.0"
