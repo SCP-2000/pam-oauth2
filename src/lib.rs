@@ -48,10 +48,10 @@ pub fn pam_get_user(pamh: &PamHandle, prompt: &str) -> Result<String, Box<dyn Er
     }
 }
 
-pub fn pam_get_item<'a, T>(
+pub fn pam_get_item<T>(
     pamh: &PamHandle,
     item_type: PamItemType,
-) -> Result<Option<&'a T>, Box<dyn Error>> {
+) -> Result<Option<&T>, Box<dyn Error>> {
     let mut ptr: *const c_void = unsafe { std::mem::zeroed() };
     match pam_sys::wrapped::get_item(pamh, item_type, &mut ptr) {
         PamReturnCode::SUCCESS => Ok(unsafe { ptr.cast::<T>().as_ref() }),
