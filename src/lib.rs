@@ -24,7 +24,7 @@ pub extern "C" fn pam_sm_authenticate(
     println!("{:?}", resp);
     let resp = pam_prompt(pamh, PamMessageStyle::PROMPT_ECHO_OFF, "enter something");
     println!("{:?}", resp);
-    return PamReturnCode::SUCCESS;
+    PamReturnCode::SUCCESS
 }
 
 pub fn extract_args(
@@ -49,7 +49,7 @@ pub fn pam_get_user(pamh: &PamHandle, prompt: &str) -> Result<String, Box<dyn Er
 }
 
 pub fn pam_get_item<'a, T>(
-    pamh: &'a PamHandle,
+    pamh: &PamHandle,
     item_type: PamItemType,
 ) -> Result<Option<&'a T>, Box<dyn Error>> {
     let mut ptr: *const c_void = unsafe { std::mem::zeroed() };

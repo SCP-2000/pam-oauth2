@@ -9,7 +9,7 @@ pub struct PamError {
 
 impl PamError {
     pub fn new(value: PamReturnCode) -> Self {
-        PamError { value: value }
+        PamError { value }
     }
 }
 
