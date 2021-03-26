@@ -13,7 +13,7 @@ pub extern "C" fn pam_sm_authenticate(
     flag: PamFlag,
     argc: c_int,
     argv: *const *const c_char,
-) -> PamReturnCode {
+    ) -> PamReturnCode {
     let args = extract_args(argc, argv);
     println!("{:?}", args);
     let user = pam_get_user(pamh, "who are you");
@@ -30,13 +30,10 @@ pub extern "C" fn pam_sm_authenticate(
 pub fn extract_args(
     argc: c_int,
     argv: *const *const c_char,
-) -> Result<Vec<String>, Box<dyn Error>> {
-    Ok((0..argc)
-        .map(|i| unsafe { CStr::from_ptr(*argv.offset(i as isize)).to_str() })
-        .collect::<Result<Vec<&str>, _>>()?
-        .into_iter()
-        .map(|i| i.to_owned())
-        .collect())
+    ) -> Result<Vec<String>, std::str::Utf8Error> {
+    (0..argc)
+        .map(|i| unsafe { CStr::from_ptr(*argv.offset(i as isize)).to_str().map(|s| s.to_owned()) })
+        .collect()
 }
 
 pub fn pam_get_user(pamh: &PamHandle, prompt: &str) -> Result<String, Box<dyn Error>> {
@@ -51,7 +48,7 @@ pub fn pam_get_user(pamh: &PamHandle, prompt: &str) -> Result<String, Box<dyn Er
 pub fn pam_get_item<T>(
     pamh: &PamHandle,
     item_type: PamItemType,
-) -> Result<Option<&T>, Box<dyn Error>> {
+    ) -> Result<Option<&T>, Box<dyn Error>> {
     let mut ptr: *const c_void = unsafe { std::mem::zeroed() };
     match pam_sys::wrapped::get_item(pamh, item_type, &mut ptr) {
         PamReturnCode::SUCCESS => Ok(unsafe { ptr.cast::<T>().as_ref() }),
@@ -60,25 +57,20 @@ pub fn pam_get_item<T>(
 }
 
 pub fn pam_get_string(pamh: &PamHandle, itype: PamItemType) -> Result<String, Box<dyn Error>> {
-    match pam_get_item(pamh, itype)? {
-        Some(x) => Ok(unsafe { CStr::from_ptr(x).to_owned().into_string()? }),
-        None => Err(Box::new(PamError::new(PamReturnCode::SYSTEM_ERR))),
-    }
+    let s = pam_get_item(pamh, itype)?;
+    let s = s.ok_or(PamError::new(PamReturnCode::SYSTEM_ERR))?;
+    let s = unsafe {CStr::from_ptr(s)};
+    let s = s.to_owned().into_string()?;
+    Ok(s)
 }
 
 pub fn pam_prompt(
     pamh: &PamHandle,
     style: PamMessageStyle,
     prompt: &str,
-) -> Result<String, Box<dyn Error>> {
-    let conv: &PamConversation = match pam_get_item(pamh, PamItemType::CONV)? {
-        Some(c) => c,
-        None => return Err(Box::new(PamError::new(PamReturnCode::SYSTEM_ERR))),
-    };
-    let callback = match conv.conv {
-        Some(c) => c,
-        None => return Err(Box::new(PamError::new(PamReturnCode::SYSTEM_ERR))),
-    };
+    ) -> Result<String, Box<dyn Error>> {
+    let conv: &PamConversation = pam_get_item(pamh, PamItemType::CONV)?.ok_or(PamError::new(PamReturnCode::SYSTEM_ERR))?;
+    let callback = conv.conv.ok_or(PamError::new(PamReturnCode::SYSTEM_ERR))?;
     let prompt = CString::new(prompt)?;
     let mut msg: *mut PamMessage = &mut PamMessage {
         msg: prompt.as_ptr(),
@@ -89,12 +81,5 @@ pub fn pam_prompt(
         PamReturnCode::SUCCESS => (),
         e => return Err(Box::new(PamError::new(e))),
     }
-    let resp = match unsafe { resp.as_ref() } {
-        Some(r) => r,
-        None => return Err(Box::new(PamError::new(PamReturnCode::SYSTEM_ERR))),
-    };
-    match unsafe { resp.resp.as_ref() } {
-        Some(r) => Ok(unsafe { CStr::from_ptr(r).to_owned().into_string()? }),
-        None => Ok("".to_string()),
-    }
+    unsafe { resp.as_ref().ok_or("resp err")?.resp.as_ref()}.map_or(Ok("".to_string()), |r| Ok(unsafe { CStr::from_ptr(r).to_owned().into_string()?}))
 }
