@@ -12,3 +12,4 @@ pam-sys = "0.5.6"
 anyhow = "1.0.40"
 serde = { version = "1.0", features = ["derive"] }
 ureq = { version = "2.1.0", features = ["json"] }
+serde_urlencoded = "0.7.0"

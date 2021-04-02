@@ -1,3 +1,5 @@
+//! A rusty wrapper around crate `pam_sys`
+
 pub use pam_sys::types::{PamFlag, PamHandle, PamItemType, PamMessageStyle, PamReturnCode};
 pub use std::os::raw::{c_char, c_int};
 
@@ -14,6 +16,7 @@ fn string_from_ptr(ptr: *const c_char) -> Result<String, PamReturnCode> {
     s.to_owned().into_string().map_err(|_| SYSTEM_ERR)
 }
 
+#[allow(clippy::not_unsafe_ptr_arg_deref)]
 pub fn pam_get_args(argc: c_int, argv: *const *const c_char) -> Result<Vec<String>, PamReturnCode> {
     unsafe {
         let args = slice::from_raw_parts(argv, argc as usize);
