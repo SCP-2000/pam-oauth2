@@ -72,9 +72,12 @@ fn authenticate(
     let req = oauth2::DeviceAccessTokenRequest::new(&req, &resp);
     let resp: oauth2::DeviceAccessTokenResponse =
         req.roundtrip("https://github.com/login/oauth/access_token")?;
-    let token = resp.access_token.ok_or(anyhow!(""))?;
+    let token = resp.access_token.ok_or_else(|| anyhow!(""))?;
     let user = GithubUser::get(&token)?;
-    let set = config.user_mapping.get(&pam_user).ok_or(anyhow!(""))?;
+    let set = config
+        .user_mapping
+        .get(&pam_user)
+        .ok_or_else(|| anyhow!(""))?;
     if set.contains(&user.login) {
         Ok(())
     } else {
